@@ -22,6 +22,39 @@ const db = mysql.createConnection(
     console.log('Connected to the employee tracker database.')
 );
 
+db.query(`SELECT * FROM departments`, (err, rows) => {
+  console.log(rows);
+});
+
+// GET a single department
+// db.query(`SELECT * FROM departments WHERE id = 1`, (err, row) => {
+//   console.log('single: ')
+//   if (err) {
+//     console.log(err);
+//   }
+//   console.log(row);
+// });
+
+// Delete a department
+// db.query(`DELETE FROM departments WHERE id = ?`, 1, (err, result) => {
+//   if (err) {
+//     console.log(err);
+//   }
+//   console.log(result);
+// });
+
+// Create a employee
+// const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) 
+//               VALUES (?,?,?,?)`;
+// const params = ['Andy', 'Samberg', 0, 0];
+
+// db.query(sql, params, (err, result) => {
+//   if (err) {
+//     console.log(err);
+//   }
+//   console.log(result);
+// });
+
 // Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
