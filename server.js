@@ -167,6 +167,37 @@ app.delete('/api/department/:id', (req, res) => {
   });
 });
 
+// Update a deptartment role
+app.put('/api/department/:id', (req, res) => {
+  
+  const errors = inputCheck(req.body, 'role_id');
+
+  if (errors) {
+    res.status(400).json({ error: errors });
+    return;
+  }
+
+  const sql = `UPDATE departments SET role_id = ? 
+               WHERE id = ?`;
+  const params = [req.body.role_id, req.params.id];
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      // check if a record was found
+    } else if (!result.affectedRows) {
+      res.json({
+        message: 'Department not found'
+      });
+    } else {
+      res.json({
+        message: 'success',
+        data: req.body,
+        changes: result.affectedRows
+      });
+    }
+  });
+});
+
 // Get all employees
 // app.get('/api/employees', (req, res) => {
 //   const sql = `SELECT * FROM employee`;
