@@ -21,13 +21,13 @@ const db = mysql.createConnection({
     console.log('Connected to the employee tracker database.')
 );
 
-// Get all departments and their associated roles
-app.get('/api/departments', (req, res) => {
-  const sql = `SELECT departments.*, role.title 
-                AS role_name 
-                FROM departments 
-                LEFT JOIN role 
-                ON departments.role_id = role.id`;
+// Get all roles and their associated departments
+app.get('/api/roles', (req, res) => {
+  const sql = `SELECT role.*, departments.name 
+                AS department_name 
+                FROM role 
+                LEFT JOIN departments 
+                ON role.department_id = departments.id`;
                 
   db.query(sql, (err, rows) => {
     if (err) {
@@ -41,14 +41,14 @@ app.get('/api/departments', (req, res) => {
   });
 });
 
-// Get single department with associated role
-app.get('/api/department/:id', (req, res) => {
-  const sql = `SELECT departments.*, role.title
-               AS role_name
-               FROM departments 
-               LEFT JOIN role 
-               ON departments.role_id = role.id 
-               WHERE departments.id = ?`;
+// Get single role with associated department
+app.get('/api/role/:id', (req, res) => {
+  const sql = `SELECT role.*, departments.name
+               AS department_name
+               FROM role 
+               LEFT JOIN departments 
+               ON role.department_id = departments.id 
+               WHERE role.department_id = ?`;
   const params = [req.params.id];
 
   db.query(sql, params, (err, row) => {
@@ -63,22 +63,22 @@ app.get('/api/department/:id', (req, res) => {
   });
 });
 
-// Create a department
-app.post('/api/department', ({ body }, res) => {
-  // department is allowed not to be affiliated with a role
+// Create a role
+app.post('/api/role', ({ body }, res) => {
+  // role is allowed not to be affiliated with a department
   const errors = inputCheck(
     body,
-    'name'
+    'title'
   );
   if (errors) {
     res.status(400).json({ error: errors });
     return;
   }
 
-  const sql = `INSERT INTO departments (name) VALUES (?)`;
+  const sql = `INSERT INTO role (title) VALUES (?)`;
   const params = [
-    body.name,
-    body.role_id
+    body.title,
+    body.department_id
   ];
 
   db.query(sql, params, (err, result) => {
@@ -95,25 +95,25 @@ app.post('/api/department', ({ body }, res) => {
 });
 
 
-// Update a department's role
-app.put('/api/department/:id', (req, res) => {
+// Update a role's department
+app.put('/api/role/:id', (req, res) => {
   // Department is allowed to not have an associated role
-  const errors = inputCheck(req.body, 'role_id');
+  const errors = inputCheck(req.body, 'department_id');
   if (errors) {
     res.status(400).json({ error: errors });
     return;
   }
 
-  const sql = `UPDATE departments SET role_id = ? 
+  const sql = `UPDATE role SET department_id = ? 
                WHERE id = ?`;
-  const params = [req.body.role_id, req.params.id];
+  const params = [req.body.department_id, req.params.id];
   db.query(sql, params, (err, result) => {
     if (err) {
       res.status(400).json({ error: err.message });
       // check if a record was found
     } else if (!result.affectedRows) {
       res.json({
-        message: 'Department not found'
+        message: 'Role not found'
       });
     } else {
       res.json({
@@ -125,16 +125,16 @@ app.put('/api/department/:id', (req, res) => {
   });
 });
 
-// Delete a department
-app.delete('/api/department/:id', (req, res) => {
-  const sql = `DELETE FROM departments WHERE id = ?`;
+// Delete a role
+app.delete('/api/role/:id', (req, res) => {
+  const sql = `DELETE FROM role WHERE id = ?`;
   const params = [req.params.id];
   db.query(sql, params, (err, result) => {
     if (err) {
       res.statusMessage(400).json({ error: res.message });
     } else if (!result.affectedRows) {
       res.json({
-        message: 'Department not found'
+        message: 'Role not found'
       });
     } else {
       res.json({
@@ -146,9 +146,9 @@ app.delete('/api/department/:id', (req, res) => {
   });
 });
 
-// Get all roles
-app.get('/api/roles', (req, res) => {
-  const sql = `SELECT * FROM role`;
+// Get all departments
+app.get('/api/departments', (req, res) => {
+  const sql = `SELECT * FROM departments`;
   db.query(sql, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -161,9 +161,9 @@ app.get('/api/roles', (req, res) => {
   });
 });
 
-// Get a single role
-app.get('/api/role/:id', (req, res) => {
-  const sql = `SELECT * FROM role WHERE id = ?`;
+// Get a single department
+app.get('/api/department/:id', (req, res) => {
+  const sql = `SELECT * FROM departments WHERE id = ?`;
   const params = [req.params.id];
 
   db.query(sql, params, (err, row) => {
@@ -178,9 +178,9 @@ app.get('/api/role/:id', (req, res) => {
   });
 });
 
-// Delete a role
-app.delete('/api/role/:id', (req, res) => {
-  const sql = `DELETE FROM role WHERE id = ?`;
+// Delete a department
+app.delete('/api/department/:id', (req, res) => {
+  const sql = `DELETE FROM departments WHERE id = ?`;
   const params = [req.params.id];
 
   db.query(sql, params, (err, result) => {
@@ -189,7 +189,7 @@ app.delete('/api/role/:id', (req, res) => {
       // checks if anything was deleted
     } else if (!result.affectedRows) {
       res.json({
-        message: 'Role not found'
+        message: 'Department not found'
       });
     } else {
       res.json({
