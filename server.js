@@ -10,18 +10,141 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Connect to database
-const db = mysql.createConnection(
-    {
+const db = mysql.createConnection({
       host: 'localhost',
       // Your MySQL username,
       user: 'root',
       // Your MySQL password
-      // password: 'mUu8>a8E-,E>;:7Q',
-      password: '20Red4l1fe19!',
+      password: 'mUu8>a8E-,E>;:7Q',
       database: 'employee_tracker'
     },
     console.log('Connected to the employee tracker database.')
 );
+
+// Get all departments and their associated roles
+app.get('/api/departments', (req, res) => {
+  const sql = `SELECT departments.*, role.title 
+                AS role_name 
+                FROM departments 
+                LEFT JOIN role 
+                ON departments.id = role.id`;
+                
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  });
+});
+
+// Get single department with associated role
+app.get('/api/department/:id', (req, res) => {
+  const sql = `SELECT departments.*, role.title 
+               AS role_name 
+               FROM departments 
+               LEFT JOIN role 
+               ON departments.id = role.id 
+               WHERE departments.id = ?`;
+  const params = [req.params.id];
+
+  db.query(sql, params, (err, row) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: row
+    });
+  });
+});
+
+// Create a department
+app.post('/api/department', ({ body }, res) => {
+  // department is allowed not to be affiliated with a role
+  const errors = inputCheck(
+    body,
+    'name'
+  );
+  if (errors) {
+    res.status(400).json({ error: errors });
+    return;
+  }
+
+  const sql = `INSERT INTO departments (name) VALUES (?)`;
+  const params = [
+    body.name,
+    body.role_id
+  ];
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      data: body,
+      changes: result.affectedRows
+    });
+  });
+});
+
+
+// Update a department's role
+app.put('/api/department/:id', (req, res) => {
+  // Department is allowed to not have an associated role
+  const errors = inputCheck(req.body, 'role_id');
+  if (errors) {
+    res.status(400).json({ error: errors });
+    return;
+  }
+
+  const sql = `UPDATE departments SET role_id = ? 
+               WHERE id = ?`;
+  const params = [req.body.role_id, req.params.id];
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      // check if a record was found
+    } else if (!result.affectedRows) {
+      res.json({
+        message: 'Department not found'
+      });
+    } else {
+      res.json({
+        message: 'success',
+        data: req.body,
+        changes: result.affectedRows
+      });
+    }
+  });
+});
+
+// Delete a department
+app.delete('/api/department/:id', (req, res) => {
+  const sql = `DELETE FROM departments WHERE id = ?`;
+  const params = [req.params.id];
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.statusMessage(400).json({ error: res.message });
+    } else if (!result.affectedRows) {
+      res.json({
+        message: 'Department not found'
+      });
+    } else {
+      res.json({
+        message: 'deleted',
+        changes: result.affectedRows,
+        id: req.params.id
+      });
+    }
+  });
+});
 
 // Get all roles
 app.get('/api/roles', (req, res) => {
@@ -112,90 +235,6 @@ const params = [body.first_name, body.last_name, body.role_id, body.manager_id];
     });
   });
 
-});
-
-// Get departments
-app.get('/api/departments', (req, res) => {
-  const sql = `SELECT * FROM departments`;
-  db.query(sql, (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({
-      message: 'success',
-      data: rows
-    });
-  });
-});
-
-// Get department ID
-app.get('/api/department/:id', (req, res) => {
-  const sql = `SELECT * FROM departments WHERE id = ?`;
-  const params = [req.params.id];
-  db.query(sql, params, (err, row) => {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      return;
-    }
-    res.json({
-      message: 'success',
-      data: row
-    });
-  });
-});
-
-// Delete departments
-app.delete('/api/department/:id', (req, res) => {
-  const sql = `DELETE FROM departments WHERE id = ?`;
-  const params = [req.params.id];
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      res.status(400).json({ error: res.message });
-      // checks if anything was deleted
-    } else if (!result.affectedRows) {
-      res.json({
-        message: 'Department not found'
-      });
-    } else {
-      res.json({
-        message: 'deleted',
-        changes: result.affectedRows,
-        id: req.params.id
-      });
-    }
-  });
-});
-
-// Update a deptartment role
-app.put('/api/department/:id', (req, res) => {
-  
-  const errors = inputCheck(req.body, 'role_id');
-
-  if (errors) {
-    res.status(400).json({ error: errors });
-    return;
-  }
-
-  const sql = `UPDATE departments SET role_id = ? 
-               WHERE id = ?`;
-  const params = [req.body.role_id, req.params.id];
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      // check if a record was found
-    } else if (!result.affectedRows) {
-      res.json({
-        message: 'Department not found'
-      });
-    } else {
-      res.json({
-        message: 'success',
-        data: req.body,
-        changes: result.affectedRows
-      });
-    }
-  });
 });
 
 // Get all employees
