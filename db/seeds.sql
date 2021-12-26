@@ -1,14 +1,14 @@
-INSERT INTO departments (name)
+INSERT INTO role (title, salary)
 VALUES
-  ('Sales'),
-  ('Marketing'),
-  ('Development');
+  ('Sales Person', 70000),
+  ('Marketing Manager', 80000),
+  ('Developer', 100000);
 
-INSERT INTO role (title, salary, department_id)
+INSERT INTO departments (name, role_id)
 VALUES
-  ('Sales Person', 70000, 1),
-  ('Marketing Manager', 80000, 2),
-  ('Developer', 100000, 3);
+  ('Sales', 1),
+  ('Marketing', 2),
+  ('Development', 3);
 
 -- INSERT INTO employee (first_name, last_name, role_id, manager_id)
 -- VALUES
