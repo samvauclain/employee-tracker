@@ -27,7 +27,7 @@ function initialQuestions() {
       type: 'list',
       name: 'options',
       message: 'What would you like to do?',
-      choices: ["View all departments", "View all roles", "View all employees", "View all employees by manager", "Quit"]
+      choices: ["View all departments", "View all roles", "View all employees", "View all employees by manager", "Add a department", "Add a role", "Update an employee role", "Quit"]
     })
     .then(({ options }) => {
       switch (options) {
@@ -43,9 +43,17 @@ function initialQuestions() {
         case "View all employees by manager":
           viewEmployeesByManager();
           break;
+        case "Add a department":
+          addDepartment();
+          break;
+        case "Add a role":
+          addRole();
+          break;
+        case "Update an employee role":
+          updateRole();
+          break;
         case "Quit":
-          console.log("Goodbye!");
-          return;
+          quitMessage();
       }
     })
 }
@@ -57,7 +65,7 @@ function viewDeptartment() {
     inquirer.prompt({
       type: 'confirm',
       name: 'confirm',
-      message: 'Back to main menu?'
+      message: 'Back to main menu? Reply "n" to exit.'
     })
       .then(data => {
         if (data.confirm) {
@@ -145,7 +153,7 @@ function viewEmployeesByManager() {
     })
       .then(data => {
         if (data.confirm) {
-          initialQuestions()
+          initialQuestions();
         }
         else {
           quitMessage();
@@ -154,8 +162,67 @@ function viewEmployeesByManager() {
   })
 }
 
+function addDepartment() {
+  const sql = `INSERT INTO departments (name) VALUES (?)`
+  inquirer
+    .prompt({
+      type: 'text',
+      name: 'department',
+      message: 'Please enter a new department name.'
+    })
+    .then(function ({ department }) {
+      db.query(sql, (department), (err) => {
+        if (err) throw err;
+        console.log(`${department} added.`);
+        initialQuestions();
+      })
+    })
+}
+
+function addRole() {
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'roleTitle',
+      message: "Please enter role title",
+    },
+    {
+      type: 'input',
+      name: 'roleSalary',
+      message: "Please add the role's annual salary",
+    },
+    {
+      type: 'input',
+      name: 'department',
+      message: "Which department will this role be tied to?",
+    }
+  ]).then(function (answer) {
+    db.connect(function (err) {
+      if (err) throw err;
+      db.query('INSERT INTO role SET ?', {
+        title: answer.roleTitle,
+        salary: answer.roleSalary,
+        department_id: answer.department
+      },
+        function (err) {
+          if (err) throw err;
+          console.log(`${answer.roleTitle} added.`);
+          initialQuestions();
+        });
+    })
+  });
+}
+
+function updateRole() {
+  
+}
+
 function quitMessage() {
-  console.log('Please hit control c to quit');
+  // console.log('Please hit control c to quit');
+  db.end(function (err) {
+    console.log('Goodbye. Please hold control and type c to quit.')
+  })
+
   return;
 }
 
