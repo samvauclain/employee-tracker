@@ -194,7 +194,7 @@ function addRole() {
     {
       type: 'input',
       name: 'department',
-      message: "Which department will this role be tied to?",
+      message: "Which department id will this role be tied to?",
     }
   ]).then(function (answer) {
     db.connect(function (err) {
@@ -214,6 +214,41 @@ function addRole() {
 }
 
 function updateRole() {
+  db.query('SELECT first_name, last_name FROM employee', (err, result) => {
+    if (err) throw err
+    
+    const employeeRoster = result.map(({ first_name, last_name }) => ({ name: first_name + " " + last_name }))
+
+    db.query('SELECT id, title FROM role', (err, result) => {
+      if (err) throw err
+      const roles = result.map(({ id, title }) => ({ name: title, value: id }))
+      console.log("ROLES:", roles)
+      inquirer
+        .prompt([{
+          type: 'list',
+          name: 'name',
+          message: 'who\'s role would you like to update?',
+          choices: employeeRoster
+        },
+        {
+          type: 'list',
+          name: 'role',
+          message: 'What is their new role?',
+          choices: roles
+        }
+        ]).then(function ({ role, name }) {
+          const sql = `UPDATE employee SET role_id = ${role} WHERE CONCAT(first_name, ' ', last_name) = '${name}'`;
+
+          // console.log("ROLE, NAME:", role, name)
+          db.query(sql, (err) => {
+            if (err) throw err
+            console.log('Employee updated to their new role.')
+            initialQuestions();
+          })
+
+        })
+    })
+  })
   
 }
 
